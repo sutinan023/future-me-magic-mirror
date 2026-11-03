@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="760" viewBox="0 0 620 760">
+<defs><linearGradient id="suit" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#a9c0eb"/></linearGradient></defs>
+<!-- Stylized 2D upper body with short sleeves: hands and face never covered -->
+<path d="M183 66 104 112 33 235 100 300 158 224 145 602 475 602 462 224 520 300 587 235 516 112 437 66Z" fill="url(#suit)" stroke="#6074af" stroke-width="13" stroke-linejoin="round"/>
+<path d="M183 66c48 46 205 46 254 0l-38-35H221z" fill="#455c9a" stroke="#ffe09a" stroke-width="12"/>
+<rect x="220" y="175" width="180" height="155" rx="26" fill="#5d6bb0" stroke="#f7d486" stroke-width="13"/>
+<rect x="247" y="203" width="126" height="55" rx="12" fill="#a6ebf5"/>
+<circle cx="271" cy="289" r="14" fill="#6ee5d3"/><circle cx="317" cy="289" r="14" fill="#ffda76"/><circle cx="364" cy="289" r="14" fill="#fd89ae"/>
+<path d="M150 388h320M159 463h302" stroke="#6e88c1" stroke-width="18" opacity=".6"/>
+<path d="M153 585h314v73H153z" fill="#6474aa" stroke="#f6da94" stroke-width="12"/>
+<rect x="170" y="616" width="280" height="84" rx="12" fill="#d7e2f9" stroke="#7489bb" stroke-width="12"/>
+<circle cx="309" cy="657" r="22" fill="#ffcd64"/>
+<path d="M80 166 39 239 100 284 151 205M540 166l41 73-61 45-51-79" stroke="#8da9d2" stroke-width="13" fill="none"/>
+</svg>
