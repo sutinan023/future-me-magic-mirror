@@ -64,3 +64,11 @@
 .auto-capture-toggle{padding:6px 10px;border-radius:999px;background:#8e7cf4;color:white;font-size:clamp(10px,1.35vh,12px);font-weight:600;white-space:nowrap}
 .auto-capture-toggle[aria-pressed="false"]{background:#d7cdec;color:#594884}
 @media (max-height:700px){.auto-capture-strip{padding:4px 8px}.auto-capture-toggle{padding:4px 8px}}
+
+/* V02.3: transparent WebGL spell effects above costumes and below game controls. */
+.transformation-fx{position:absolute;inset:0;overflow:hidden;z-index:2;pointer-events:none;border-radius:inherit}
+.transformation-fx-canvas{width:100%!important;height:100%!important;display:block;pointer-events:none}
+.career-scene .ar-overlay{z-index:2}
+.career-scene .transformation-fx{z-index:3}
+.career-scene .scene-headline,.career-scene .pose-hint,.career-scene .ar-status{z-index:4}
+@media (prefers-reduced-motion: reduce){.transformation-fx{opacity:.55}}

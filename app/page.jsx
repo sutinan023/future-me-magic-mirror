@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { drawAstronaut, drawCoverMirrored } from '../lib-ar';
+import TransformationFX from '../components/TransformationFX';
 
 const CAREERS = [
   { id:'doctor', th:'คุณหมอ', en:'DOCTOR', emoji:'🩺', outfit:'🥼', prop:'💗', color:'#69c9ed', dark:'#24749a', backdrop:'radial-gradient(circle at 60% 25%,#d8faff,#9edff5 55%,#68b6ed)', pose:'โบกมือให้คนไข้หน่อย!', scene:'🏥', message:'ผู้ดูแลหัวใจของทุกคน' },
@@ -36,6 +37,8 @@ export default function Home() {
   const trackerRef = useRef(null);
   const poseRef = useRef(null);
   const overlayRef = useRef(null);
+  const fxCanvasRef = useRef(null);
+  const attachFxCanvas = useRef((canvas) => { fxCanvasRef.current = canvas; }).current;
   const assetsRef = useRef({});
   const stageRef = useRef(step);
   stageRef.current = step;
@@ -153,6 +156,12 @@ export default function Home() {
     if(hasVideo && careerRef.current.id==='astronaut'){
       drawAstronaut(ctx,poseRef.current,videoRef.current,w,h,assetsRef.current);
     }
+    // Composite the exact on-screen Three.js WebGL layer into the saved photo.
+    // Failure to draw the layer must never prevent the photo from saving.
+    const fx = fxCanvasRef.current;
+    if (fx && fx.width > 0 && fx.height > 0) {
+      try { ctx.drawImage(fx, 0, 0, w, h); } catch (err) { console.warn('3D export skipped:',err); }
+    }
     if(!hasVideo){ ctx.font='260px serif';ctx.textAlign='center';ctx.fillText('✨',w/2,h*.58); }
     ctx.fillStyle='rgba(46,29,94,.5)';ctx.fillRect(0,0,w,130);ctx.fillRect(0,h-220,w,220);
     ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 53px sans-serif';ctx.fillText('FUTURE ME',w/2,88);
@@ -172,7 +181,7 @@ export default function Home() {
   const displayCareer=rolling?CAREERS[rollIndex]:career;
 
   return <main className="workstation">
-    <div className="workspace-brand"><span className="brand-symbol">✦</span><div><b>FUTURE ME</b><small>MAGIC MIRROR · ASTRONAUT AR V02</small></div></div>
+    <div className="workspace-brand"><span className="brand-symbol">✦</span><div><b>FUTURE ME</b><small>MAGIC MIRROR · THREE.JS MAGIC V02.3</small></div></div>
     <section className="kiosk-frame" aria-label="Future Me Magic Mirror prototype">
       <div className="kiosk-grain"/>
       <TinyStars/>
@@ -198,12 +207,12 @@ export default function Home() {
         </>}
         {step===3&&<>
           <ScreenHeader step={4} title={`ว้าว! ${career.th}`} subtitle="นี่คือชุดอาชีพในฝันของหนู"/>
-          <div className="stage-area"><Mirror color={career.color}><div className="career-scene" style={{background:career.backdrop}}><div className="scene-sun">{career.scene}</div>{cameraOn?<><video ref={videoRef} className="camera-video" autoPlay playsInline muted/>{career.id==='astronaut'?<><canvas className="ar-overlay" ref={overlayRef} aria-hidden="true"/><div className="ar-status">{trackerRef.current?'🧑‍🚀 LIVE ASTRONAUT AR':'กำลังเตรียมชุด AR...'}</div></>:<div className="camera-costume-hint"><span>{career.emoji}</span><b>CAREER MOCKUP · AR COMING NEXT</b></div>}</>:<Character career={career} live/>}<div className="scene-headline">{career.emoji} {career.en}</div><div className="pose-hint">{career.id==='astronaut'&&cameraOn?'ถอยให้เห็นหัว ไหล่ และสะโพก · '+career.pose:career.pose}</div></div></Mirror></div>
+          <div className="stage-area"><Mirror color={career.color}><div className="career-scene" style={{background:career.backdrop}}><div className="scene-sun">{career.scene}</div>{cameraOn?<><video ref={videoRef} className="camera-video" autoPlay playsInline muted/>{career.id==='astronaut'?<><canvas className="ar-overlay" ref={overlayRef} aria-hidden="true"/><div className="ar-status">{trackerRef.current?'🧑‍🚀 LIVE ASTRONAUT AR':'กำลังเตรียมชุด AR...'}</div></>:<div className="camera-costume-hint"><span>{career.emoji}</span><b>CAREER MOCKUP · AR COMING NEXT</b></div>}</>:<Character career={career} live/>}<TransformationFX active={step===3} theme={career.color} onCanvas={attachFxCanvas}/><div className="scene-headline">{career.emoji} {career.en}</div><div className="pose-hint">{career.id==='astronaut'&&cameraOn?'ถอยให้เห็นหัว ไหล่ และสะโพก · '+career.pose:career.pose}</div></div></Mirror></div>
           <div className="action-zone"><div className="auto-capture-strip" role="status"><span>{autoCapture?`📸 ถ่ายอัตโนมัติใน ${autoSeconds} วินาที`:'📷 โหมดถ่ายภาพด้วยตนเอง'}</span><button type="button" className="auto-capture-toggle" aria-pressed={autoCapture} onClick={()=>setAutoCapture(v=>!v)}>{autoCapture?'ปิดออโต้':'เปิดออโต้'}</button></div><PrimaryButton onClick={takePhoto}>📸 ถ่ายรูปตอนนี้</PrimaryButton><div className="action-twins"><button className="secondary-btn" onClick={randomize}>🔄 สุ่มใหม่</button><button className="secondary-btn" onClick={()=>goto(1)}>เปลี่ยนกล้อง</button></div></div>
         </>}
         {step===4&&<>
           <ScreenHeader step={5} title="เตรียมโพสท่า!" subtitle="ยิ้มกว้าง ๆ แล้วมองกล้องนะ"/>
-          <div className="stage-area"><Mirror color="#ffce76"><div className="career-scene photo-scene" style={{background:career.backdrop}}>{cameraOn?<><video ref={videoRef} className="camera-video" autoPlay playsInline muted/>{career.id==='astronaut'&&<canvas className="ar-overlay" ref={overlayRef} aria-hidden="true"/>}</>:<Character career={career}/>}<span className="huge-count">{countdown??'✨'}</span><div className="pose-hint">{career.pose}</div></div></Mirror></div><div className="action-zone"><div className="spinner-caption">📸 3 · 2 · 1 · แชะ!</div><button className="text-btn" onClick={()=>{clearInterval(countTimer.current);setCountdown(null);goto(3)}}>ยกเลิก</button></div>
+          <div className="stage-area"><Mirror color="#ffce76"><div className="career-scene photo-scene" style={{background:career.backdrop}}>{cameraOn?<><video ref={videoRef} className="camera-video" autoPlay playsInline muted/>{career.id==='astronaut'&&<canvas className="ar-overlay" ref={overlayRef} aria-hidden="true"/>}</>:<Character career={career}/>}<TransformationFX active={step===4} theme={career.color} onCanvas={attachFxCanvas}/><span className="huge-count">{countdown??'✨'}</span><div className="pose-hint">{career.pose}</div></div></Mirror></div><div className="action-zone"><div className="spinner-caption">📸 3 · 2 · 1 · แชะ!</div><button className="text-btn" onClick={()=>{clearInterval(countTimer.current);setCountdown(null);goto(3)}}>ยกเลิก</button></div>
         </>}
         {step===5&&<>
           <ScreenHeader step={6} title="เก่งมากเลย!" subtitle="นี่คือภาพ Future Me ของหนู ✨"/>
@@ -214,6 +223,6 @@ export default function Home() {
       <div className="kiosk-nav"><button aria-label="กลับหน้าแรก" title="กลับหน้าแรก" onClick={reset}>⌂</button><span>{STAGES[step]}</span><div className="step-dots">{STAGES.map((_,i)=><span key={i} className={i===step?'active':''}/>)}</div><button aria-label="ความช่วยเหลือ" title="ความช่วยเหลือ" onClick={()=>setHelp(!help)}>?</button></div>
       {help&&<div className="help-overlay"><div className="help-card"><h3>✨ วิธีเล่น</h3><p>1. กดเริ่มและเปิดกล้อง (หรือทดลอง Mock Mode)</p><p>2. กดสุ่มอาชีพ แล้วดูชุดตัวอย่าง</p><p>3. กดถ่ายรูปเพื่อรับภาพที่ระลึก</p><p className="help-warning">หมายเหตุ: Prototype 02 มีชุด AR เฉพาะนักบินอวกาศเมื่อเปิดกล้อง อาชีพอื่นยังเป็น Mock</p><button className="primary-btn small" onClick={()=>setHelp(false)}>เข้าใจแล้ว</button></div></div>}
     </section>
-    <aside className="workspace-panel"><div className="workspace-side-title">✨ FUTURE ME STUDIO</div><h2>Prototype 02.2</h2><p>ทดลองชุดนักบินอวกาศ AR ติดตามตัวจริง (อีก 5 อาชีพยังเป็น Mock)</p><div className="side-label">SCREEN FLOW</div><div className="side-steps">{STAGES.map((name,i)=><button key={i} onClick={()=>{if(i===2){randomize();return;}if(i===4){takePhoto();return;}if(i===5&&!photo){return;}goto(i)}} className={step===i?'current':''} disabled={i===5&&!photo}><span>{String(i+1).padStart(2,'0')}</span>{name}<span className="side-arrow">›</span></button>)}</div><div className="prototype-tip"><b>UI MOCK MODE</b><p>เปิดกล้องเพื่อทดลอง Astronaut AR จริง และเลือกอาชีพอื่นเพื่อดู Mock ได้เช่นเดิม</p></div><button className="full-btn" onClick={toggleFullscreen}>⛶ {useFullScreen?'ออกจากโหมดเต็มจอ':'เปิด Kiosk Fullscreen'}</button><div className="side-footer">AUTO PHOTO · DESKTOP PREVIEW · PORTRAIT 9:16<br/>LOCAL PORT 3117 · NOT 3107</div></aside>
+    <aside className="workspace-panel"><div className="workspace-side-title">✨ FUTURE ME STUDIO</div><h2>Prototype 02.3</h2><p>ทดลองชุดนักบินอวกาศ AR ติดตามตัวจริง (อีก 5 อาชีพยังเป็น Mock)</p><div className="side-label">SCREEN FLOW</div><div className="side-steps">{STAGES.map((name,i)=><button key={i} onClick={()=>{if(i===2){randomize();return;}if(i===4){takePhoto();return;}if(i===5&&!photo){return;}goto(i)}} className={step===i?'current':''} disabled={i===5&&!photo}><span>{String(i+1).padStart(2,'0')}</span>{name}<span className="side-arrow">›</span></button>)}</div><div className="prototype-tip"><b>UI MOCK MODE</b><p>เปิดกล้องเพื่อทดลอง Astronaut AR จริง และเลือกอาชีพอื่นเพื่อดู Mock ได้เช่นเดิม</p></div><button className="full-btn" onClick={toggleFullscreen}>⛶ {useFullScreen?'ออกจากโหมดเต็มจอ':'เปิด Kiosk Fullscreen'}</button><div className="side-footer">THREE.JS FX · AUTO PHOTO · PORTRAIT 9:16<br/>LOCAL PORT 3117 · NOT 3107</div></aside>
   </main>;
 }
