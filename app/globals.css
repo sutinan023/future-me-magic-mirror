@@ -58,3 +58,9 @@
   .kiosk-frame { width: 100vw; height: 100dvh; aspect-ratio: auto; }
   .app-screen { padding-left: 6%; padding-right: 6%; }
 }
+
+/* V02.2: compact, child-friendly auto capture controls; retain existing portrait frame. */
+.auto-capture-strip{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#fffdf3dc;border:1px solid #f6e4a8;border-radius:16px;color:#67529d;font-size:clamp(11px,1.6vh,14px);font-weight:600}
+.auto-capture-toggle{padding:6px 10px;border-radius:999px;background:#8e7cf4;color:white;font-size:clamp(10px,1.35vh,12px);font-weight:600;white-space:nowrap}
+.auto-capture-toggle[aria-pressed="false"]{background:#d7cdec;color:#594884}
+@media (max-height:700px){.auto-capture-strip{padding:4px 8px}.auto-capture-toggle{padding:4px 8px}}

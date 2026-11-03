@@ -27,6 +27,8 @@ export default function Home() {
   const [rollIndex,setRollIndex] = useState(0);
   const [prevCareer,setPrevCareer] = useState(null);
   const [countdown,setCountdown] = useState(null);
+  const [autoCapture,setAutoCapture] = useState(true);
+  const [autoSeconds,setAutoSeconds] = useState(5);
   const [photo,setPhoto] = useState(null);
   const [cameraOn,setCameraOn] = useState(false);
   const [cameraError,setCameraError] = useState('');
@@ -45,13 +47,14 @@ export default function Home() {
   const streamRef = useRef(null);
   const reelTimer = useRef(null);
   const countTimer = useRef(null);
+  const autoTimer = useRef(null);
   const advanceTimer = useRef(null);
   const careerRef = useRef(career);
   careerRef.current = career;
   const [useFullScreen,setUseFullScreen] = useState(false);
 
   useEffect(()=>()=>{
-    [reelTimer,countTimer,advanceTimer].forEach(x=>clearInterval(x.current));
+    [reelTimer,countTimer,advanceTimer,autoTimer].forEach(x=>clearInterval(x.current));
     cancelAnimationFrame(rafRef.current);
     trackerRef.current?.close?.();
     streamRef.current?.getTracks().forEach(t=>t.stop());
@@ -94,6 +97,26 @@ export default function Home() {
     return ()=>{active=false;cancelAnimationFrame(rafRef.current);};
   },[cameraOn,step,aiStatus]);
   useEffect(()=>{ if(cameraOn && videoRef.current && streamRef.current){ videoRef.current.srcObject=streamRef.current; videoRef.current.play().catch(()=>{}); } },[step,cameraOn]);
+
+  // Auto photo starts only after reaching the AR costume screen, not on welcome or roulette.
+  // A fresh interval is created whenever the AR screen is entered; leaving it cancels the timer.
+  useEffect(()=>{
+    clearInterval(autoTimer.current);
+    if(step!==3 || !autoCapture || help) return;
+    let remaining=5;
+    setAutoSeconds(remaining);
+    autoTimer.current=setInterval(()=>{
+      if(document.visibilityState==='hidden') return; // Don't capture while the tab is backgrounded.
+      remaining-=1;
+      setAutoSeconds(Math.max(remaining,0));
+      if(remaining<=0){
+        clearInterval(autoTimer.current);
+        takePhoto();
+      }
+    },1000);
+    return ()=>clearInterval(autoTimer.current);
+  },[step,autoCapture,help,career.id]);
+
 
   async function enableCamera(){
     setCameraError('');
@@ -139,11 +162,12 @@ export default function Home() {
     for(let i=0;i<24;i++){ctx.fillStyle=i%2?'#fff5b7':'#ffffff';ctx.font=`${18+(i%3)*9}px serif`;ctx.fillText('✦',(i*137+44)%w,(i*271+160)%h);}
   }
   function takePhoto(){
+    clearInterval(autoTimer.current);
     clearInterval(countTimer.current);let n=3;setCountdown(n);goto(4);
     countTimer.current=setInterval(()=>{n--;if(n>0){setCountdown(n);}else{clearInterval(countTimer.current);setCountdown(null);const canvas=document.createElement('canvas');canvas.width=900;canvas.height=1600;const ctx=canvas.getContext('2d');renderPortrait(canvas,ctx);setPhoto(canvas.toDataURL('image/png'));goto(5);}},1000);
   }
   async function savePhoto(){ if(!photo)return;const res=await fetch(photo);const blob=await res.blob();const filename=`future-me-${career.id}-${Date.now()}.png`;const file=new File([blob],filename,{type:'image/png'});if(navigator.canShare?.({files:[file]})&&navigator.share){try{await navigator.share({files:[file],title:'Future Me Magic Mirror'});return;}catch(e){if(e.name==='AbortError')return;}}const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000); }
-  function reset(){[reelTimer,countTimer,advanceTimer].forEach(x=>clearInterval(x.current));setRolling(false);setCountdown(null);setPhoto(null);poseRef.current=null;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;setCameraOn(false);trackerRef.current?.close?.();trackerRef.current=null;setAiStatus('ยังไม่เปิด AI');goto(0);}
+  function reset(){[reelTimer,countTimer,advanceTimer,autoTimer].forEach(x=>clearInterval(x.current));setRolling(false);setCountdown(null);setPhoto(null);poseRef.current=null;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;setCameraOn(false);trackerRef.current?.close?.();trackerRef.current=null;setAiStatus('ยังไม่เปิด AI');goto(0);}
   function toggleFullscreen(){const el=document.querySelector('.kiosk-frame');if(!document.fullscreenElement){el?.requestFullscreen?.().then(()=>setUseFullScreen(true)).catch(()=>{});}else{document.exitFullscreen?.().then(()=>setUseFullScreen(false)).catch(()=>{});}}
   const displayCareer=rolling?CAREERS[rollIndex]:career;
 
@@ -175,7 +199,7 @@ export default function Home() {
         {step===3&&<>
           <ScreenHeader step={4} title={`ว้าว! ${career.th}`} subtitle="นี่คือชุดอาชีพในฝันของหนู"/>
           <div className="stage-area"><Mirror color={career.color}><div className="career-scene" style={{background:career.backdrop}}><div className="scene-sun">{career.scene}</div>{cameraOn?<><video ref={videoRef} className="camera-video" autoPlay playsInline muted/>{career.id==='astronaut'?<><canvas className="ar-overlay" ref={overlayRef} aria-hidden="true"/><div className="ar-status">{trackerRef.current?'🧑‍🚀 LIVE ASTRONAUT AR':'กำลังเตรียมชุด AR...'}</div></>:<div className="camera-costume-hint"><span>{career.emoji}</span><b>CAREER MOCKUP · AR COMING NEXT</b></div>}</>:<Character career={career} live/>}<div className="scene-headline">{career.emoji} {career.en}</div><div className="pose-hint">{career.id==='astronaut'&&cameraOn?'ถอยให้เห็นหัว ไหล่ และสะโพก · '+career.pose:career.pose}</div></div></Mirror></div>
-          <div className="action-zone"><PrimaryButton onClick={takePhoto}>📸 ถ่ายรูปเลย!</PrimaryButton><div className="action-twins"><button className="secondary-btn" onClick={randomize}>🔄 สุ่มใหม่</button><button className="secondary-btn" onClick={()=>goto(1)}>เปลี่ยนกล้อง</button></div></div>
+          <div className="action-zone"><div className="auto-capture-strip" role="status"><span>{autoCapture?`📸 ถ่ายอัตโนมัติใน ${autoSeconds} วินาที`:'📷 โหมดถ่ายภาพด้วยตนเอง'}</span><button type="button" className="auto-capture-toggle" aria-pressed={autoCapture} onClick={()=>setAutoCapture(v=>!v)}>{autoCapture?'ปิดออโต้':'เปิดออโต้'}</button></div><PrimaryButton onClick={takePhoto}>📸 ถ่ายรูปตอนนี้</PrimaryButton><div className="action-twins"><button className="secondary-btn" onClick={randomize}>🔄 สุ่มใหม่</button><button className="secondary-btn" onClick={()=>goto(1)}>เปลี่ยนกล้อง</button></div></div>
         </>}
         {step===4&&<>
           <ScreenHeader step={5} title="เตรียมโพสท่า!" subtitle="ยิ้มกว้าง ๆ แล้วมองกล้องนะ"/>
@@ -190,6 +214,6 @@ export default function Home() {
       <div className="kiosk-nav"><button aria-label="กลับหน้าแรก" title="กลับหน้าแรก" onClick={reset}>⌂</button><span>{STAGES[step]}</span><div className="step-dots">{STAGES.map((_,i)=><span key={i} className={i===step?'active':''}/>)}</div><button aria-label="ความช่วยเหลือ" title="ความช่วยเหลือ" onClick={()=>setHelp(!help)}>?</button></div>
       {help&&<div className="help-overlay"><div className="help-card"><h3>✨ วิธีเล่น</h3><p>1. กดเริ่มและเปิดกล้อง (หรือทดลอง Mock Mode)</p><p>2. กดสุ่มอาชีพ แล้วดูชุดตัวอย่าง</p><p>3. กดถ่ายรูปเพื่อรับภาพที่ระลึก</p><p className="help-warning">หมายเหตุ: Prototype 02 มีชุด AR เฉพาะนักบินอวกาศเมื่อเปิดกล้อง อาชีพอื่นยังเป็น Mock</p><button className="primary-btn small" onClick={()=>setHelp(false)}>เข้าใจแล้ว</button></div></div>}
     </section>
-    <aside className="workspace-panel"><div className="workspace-side-title">✨ FUTURE ME STUDIO</div><h2>Prototype 02</h2><p>ทดลองชุดนักบินอวกาศ AR ติดตามตัวจริง (อีก 5 อาชีพยังเป็น Mock)</p><div className="side-label">SCREEN FLOW</div><div className="side-steps">{STAGES.map((name,i)=><button key={i} onClick={()=>{if(i===2){randomize();return;}if(i===4){takePhoto();return;}if(i===5&&!photo){return;}goto(i)}} className={step===i?'current':''} disabled={i===5&&!photo}><span>{String(i+1).padStart(2,'0')}</span>{name}<span className="side-arrow">›</span></button>)}</div><div className="prototype-tip"><b>UI MOCK MODE</b><p>เปิดกล้องเพื่อทดลอง Astronaut AR จริง และเลือกอาชีพอื่นเพื่อดู Mock ได้เช่นเดิม</p></div><button className="full-btn" onClick={toggleFullscreen}>⛶ {useFullScreen?'ออกจากโหมดเต็มจอ':'เปิด Kiosk Fullscreen'}</button><div className="side-footer">DESKTOP PREVIEW · PORTRAIT 9:16<br/>LOCAL PORT 3117 · NOT 3107</div></aside>
+    <aside className="workspace-panel"><div className="workspace-side-title">✨ FUTURE ME STUDIO</div><h2>Prototype 02.2</h2><p>ทดลองชุดนักบินอวกาศ AR ติดตามตัวจริง (อีก 5 อาชีพยังเป็น Mock)</p><div className="side-label">SCREEN FLOW</div><div className="side-steps">{STAGES.map((name,i)=><button key={i} onClick={()=>{if(i===2){randomize();return;}if(i===4){takePhoto();return;}if(i===5&&!photo){return;}goto(i)}} className={step===i?'current':''} disabled={i===5&&!photo}><span>{String(i+1).padStart(2,'0')}</span>{name}<span className="side-arrow">›</span></button>)}</div><div className="prototype-tip"><b>UI MOCK MODE</b><p>เปิดกล้องเพื่อทดลอง Astronaut AR จริง และเลือกอาชีพอื่นเพื่อดู Mock ได้เช่นเดิม</p></div><button className="full-btn" onClick={toggleFullscreen}>⛶ {useFullScreen?'ออกจากโหมดเต็มจอ':'เปิด Kiosk Fullscreen'}</button><div className="side-footer">AUTO PHOTO · DESKTOP PREVIEW · PORTRAIT 9:16<br/>LOCAL PORT 3117 · NOT 3107</div></aside>
   </main>;
 }

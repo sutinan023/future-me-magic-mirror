@@ -75,4 +75,16 @@ npm run build
 4. Go to the Astronaut screen and validate the helmet/suit positioning, then test photo capture.
 
 The browser viewport's aspect ratio, not its width alone, now selects the kiosk-only layout. Device emulation still uses your computer webcam and is not an actual mobile device test.
-# future-me-magic-mirror
+
+
+## V02.2 — Auto Photo Capture
+
+- หน้า Transformation (หน้าที่ 4) เริ่มนับถอยหลังเตรียมถ่ายอัตโนมัติ **5 วินาที** หลังเข้าสู่หน้า
+- ต่อด้วยหน้า Photo Moment พร้อม Countdown **3–2–1** แล้วบันทึกภาพพร้อม AR ในหน้า Result โดยอัตโนมัติ (ไม่ดาวน์โหลดไฟล์โดยไม่ได้กด)
+- ปุ่ม **ปิดออโต้/เปิดออโต้** ใช้สลับระหว่าง Auto และ Manual; ค่าเริ่มต้นเปิด Auto
+- ปุ่ม **ถ่ายรูปตอนนี้** ยังคงใช้ได้ เพื่อข้ามช่วงรอ 5 วินาที
+- เมื่อเปลี่ยนหน้า ยกเลิก หรือเล่นรอบใหม่ ระบบจะล้าง Timer เดิม ไม่ให้ถ่ายซ้ำจากรอบก่อน
+- เมื่อ Browser Tab อยู่เบื้องหลัง ตัวนับเตรียมถ่ายจะหยุดชั่วคราว
+- สามารถกดแชร์/บันทึกไฟล์เองในหน้า Result เพื่อไม่ให้มือถือดาวน์โหลดโดยไม่ตั้งใจ
+- โหมด AR ยังรองรับ Astronaut เท่านั้น อีกห้าอาชีพยังเป็น Mock ตาม V02.1
+- คงพอร์ต **3117** และ UI Portrait Kiosk V02.1
